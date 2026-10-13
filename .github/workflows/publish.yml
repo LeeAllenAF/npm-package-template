@@ -1,0 +1,27 @@
+name: Publish npm
+on:
+  push:
+    tags:
+      - 'v*'
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  publish:
+    if: github.repository != 'LeeAllenAF/npm-package-template'
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - run: npm run check
+      - name: Validate tag matches package version
+        shell: bash
+        run: |
+          VERSION="$(node -p 'require("./package.json").version')"
+          test "$GITHUB_REF_NAME" = "v$VERSION"
+      - run: npm publish --provenance --access public
